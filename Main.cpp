@@ -52,6 +52,8 @@ int main()
 
 #pragma endregion
 
+        // set rail on grid cells
+
         EndDrawing();
     }
 
