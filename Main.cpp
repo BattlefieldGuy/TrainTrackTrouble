@@ -17,6 +17,7 @@ int main()
     while (!WindowShouldClose())
     {
 #pragma region - grid vriables -
+
         int gridRows = screenWidth / tileSize;
         int gridCols = screenHeight / tileSize;
 
@@ -48,7 +49,7 @@ int main()
         int tileX = gridX * tileSize;
         int tileY = gridY * tileSize;
 
-        DrawRectangleLines(tileX, tileY, tileSize, tileSize, GREEN);
+        DrawRectangle(tileX, tileY, tileSize, tileSize, GREEN);
 
 #pragma endregion
 
