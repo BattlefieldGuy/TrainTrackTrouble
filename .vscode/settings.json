@@ -1,3 +1,9 @@
 {
-    "C_Cpp.errorSquiggles": "enabledIfIncludesResolve"
+    "C_Cpp.errorSquiggles": "enabledIfIncludesResolve",
+    "files.associations": {
+        "*.embeddedhtml": "html",
+        "array": "cpp",
+        "string_view": "cpp",
+        "initializer_list": "cpp"
+    }
 }

@@ -7,8 +7,12 @@ g++ Main.cpp -o train.exe -IC:/raylib/include -LC:/raylib/lib -lraylib -lopengl3
 
 int tileSize = 32;
 
-int screenWidth = 1800;
+int screenWidth = 800;
 int screenHeight = 800;
+
+int typeIndicatorSize = 32;
+int typeIndicatorX = 16;
+int typeIndicatorY = 16;
 
 int main()
 {
@@ -22,9 +26,12 @@ int main()
                 Empty,
                 Track,
                 Station,
-                Obstacle
+                Obstacle,
+                COUNT
                 // room for more .....
         };
+
+        const int maxTileTypes = static_cast<int>(TileType::COUNT);
 
         std::vector<std::vector<TileType>> grid;
 
@@ -75,7 +82,7 @@ int main()
                                         break;
                                 }
 
-                                //always draw outlines
+                                // always draw outlines
                                 DrawRectangleLines(cellx, celly, tileSize, tileSize, BLUE);
                         }
                 }
@@ -91,7 +98,7 @@ int main()
                 int tileX = gridX * tileSize;
                 int tileY = gridY * tileSize;
 
-                DrawRectangle(tileX, tileY, tileSize, tileSize, GREEN);
+                DrawRectangle(tileX, tileY, tileSize, tileSize, BLUE);
 
 #pragma endregion
 
@@ -107,6 +114,43 @@ int main()
                 if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
                 {
                         grid[gridY][gridX] = TileType::Empty;
+                }
+
+                if (GetMouseWheelMove != 0)
+                {
+                        int typeIndex = static_cast<int>(activeTile);
+                        typeIndex += GetMouseWheelMove();
+
+                        if (typeIndex < 0)
+                                typeIndex = maxTileTypes - 1;
+                        if (typeIndex >= maxTileTypes)
+                                typeIndex = 0;
+
+                        activeTile = static_cast<TileType>(typeIndex);
+                }
+
+#pragma endRegion
+
+#pragma region - type indicator -
+
+                switch (activeTile)
+                {
+                case TileType::Empty:
+                        DrawRectangle(typeIndicatorX, typeIndicatorY, typeIndicatorSize, typeIndicatorSize, WHITE);
+                        DrawRectangle(typeIndicatorX, typeIndicatorY, typeIndicatorSize, typeIndicatorSize, RED);
+                        break;
+                case TileType::Track:
+                        DrawRectangle(typeIndicatorX, typeIndicatorY, typeIndicatorSize, typeIndicatorSize, GRAY);
+                        break;
+                case TileType::Station:
+                        DrawRectangle(typeIndicatorX, typeIndicatorY, typeIndicatorSize, typeIndicatorSize, GREEN);
+                        break;
+                case TileType::Obstacle:
+                        DrawRectangle(typeIndicatorX, typeIndicatorY, typeIndicatorSize, typeIndicatorSize, DARKGRAY);
+                        break;
+
+                default:
+                        break;
                 }
 
 #pragma endregion
