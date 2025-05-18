@@ -14,6 +14,8 @@ int typeIndicatorSize = 32;
 int typeIndicatorX = 16;
 int typeIndicatorY = 16;
 
+int nextStationId = 1;
+
 int main()
 {
         InitWindow(screenWidth, screenHeight, "Train Track Trouble");
@@ -35,17 +37,28 @@ int main()
 
         std::vector<std::vector<TileType>> grid;
 
+        std::vector<std::vector<int>> stationsGrid;
+
         int gridRows = screenWidth / tileSize;
         int gridCols = screenHeight / tileSize;
 
 #pragma endregion
 
 #pragma region - grid initializer -
+        // regular grid
         grid.resize(gridRows);
 
         for (int i = 0; i < gridRows; i++)
         {
                 grid[i].resize(gridCols, TileType::Empty);
+        }
+
+        // grid to keep track of station numbers
+        stationsGrid.resize(gridRows);
+
+        for (int i = 0; i < gridRows; i++)
+        {
+                stationsGrid[i].resize(gridCols, -1);
         }
 #pragma endregion
 
@@ -73,6 +86,8 @@ int main()
                                         break;
                                 case TileType::Station:
                                         DrawRectangle(cellx, celly, tileSize, tileSize, GREEN);
+                                        if (stationsGrid[y][x] >= 0)//shows station number
+                                                DrawText(TextFormat("%d", stationsGrid[y][x]), cellx, celly, 32, BLACK);
                                         break;
                                 case TileType::Obstacle:
                                         DrawRectangle(cellx, celly, tileSize, tileSize, DARKGRAY);
@@ -108,15 +123,23 @@ int main()
                 {
                         if (gridY >= 0 && gridY < grid.size() &&
                             gridX >= 0 && gridX < grid[0].size())
-                                grid[gridY][gridX] = activeTile;
+
+                                if (activeTile == TileType::Station && grid[gridY][gridX] != TileType::Station)//give station an ID
+                                {
+                                        stationsGrid[gridY][gridX] = nextStationId;
+                                        nextStationId++;
+                                }
+                        grid[gridY][gridX] = activeTile;
                 }
 
                 if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
                 {
-                        grid[gridY][gridX] = TileType::Empty;
+                        if (gridY >= 0 && gridY < grid.size() &&
+                            gridX >= 0 && gridX < grid[0].size())
+                                grid[gridY][gridX] = TileType::Empty;
                 }
 
-                if (GetMouseWheelMove != 0)
+                if (GetMouseWheelMove != 0)//reads mousewheel input to set the tile type to paint
                 {
                         int typeIndex = static_cast<int>(activeTile);
                         typeIndex += GetMouseWheelMove();
@@ -133,11 +156,11 @@ int main()
 
 #pragma region - type indicator -
 
-                switch (activeTile)
+                switch (activeTile)//type indicator
                 {
                 case TileType::Empty:
                         DrawRectangle(typeIndicatorX, typeIndicatorY, typeIndicatorSize, typeIndicatorSize, WHITE);
-                        DrawRectangle(typeIndicatorX, typeIndicatorY, typeIndicatorSize, typeIndicatorSize, RED);
+                        DrawRectangleLines(typeIndicatorX, typeIndicatorY, typeIndicatorSize, typeIndicatorSize, RED);
                         break;
                 case TileType::Track:
                         DrawRectangle(typeIndicatorX, typeIndicatorY, typeIndicatorSize, typeIndicatorSize, GRAY);
