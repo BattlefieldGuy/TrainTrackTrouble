@@ -5,6 +5,31 @@ g++ Main.cpp -o train.exe -IC:/raylib/include -LC:/raylib/lib -lraylib -lopengl3
 #include "raylib.h"
 #include <vector>
 
+struct Train
+{
+        std::vector<Vector2> path;
+
+        enum direction
+        {
+                up,
+                down,
+                left,
+                right
+        };
+
+        float moveSpeed = 1;
+
+        int trainX, trainY;
+
+        int targetPathIndex;
+
+        int stationTargetID;
+
+        bool isMoving;
+};
+
+Train train;
+
 int tileSize = 32;
 
 int screenWidth = 800;
@@ -65,6 +90,9 @@ int main()
         // painter
         TileType activeTile = TileType::Track;
 
+        train.trainX = 16;
+        train.trainY = 16;
+
         while (!WindowShouldClose())
         {
 
@@ -86,7 +114,7 @@ int main()
                                         break;
                                 case TileType::Station:
                                         DrawRectangle(cellx, celly, tileSize, tileSize, GREEN);
-                                        if (stationsGrid[y][x] >= 0)//shows station number
+                                        if (stationsGrid[y][x] >= 0) // shows station number
                                                 DrawText(TextFormat("%d", stationsGrid[y][x]), cellx, celly, 32, BLACK);
                                         break;
                                 case TileType::Obstacle:
@@ -124,7 +152,7 @@ int main()
                         if (gridY >= 0 && gridY < grid.size() &&
                             gridX >= 0 && gridX < grid[0].size())
 
-                                if (activeTile == TileType::Station && grid[gridY][gridX] != TileType::Station)//give station an ID
+                                if (activeTile == TileType::Station && grid[gridY][gridX] != TileType::Station) // give station an ID
                                 {
                                         stationsGrid[gridY][gridX] = nextStationId;
                                         nextStationId++;
@@ -139,7 +167,7 @@ int main()
                                 grid[gridY][gridX] = TileType::Empty;
                 }
 
-                if (GetMouseWheelMove != 0)//reads mousewheel input to set the tile type to paint
+                if (GetMouseWheelMove != 0) // reads mousewheel input to set the tile type to paint
                 {
                         int typeIndex = static_cast<int>(activeTile);
                         typeIndex += GetMouseWheelMove();
@@ -154,9 +182,19 @@ int main()
 
 #pragma endRegion
 
+#pragma region - train drawing -
+
+                if (train.trainX >= 0 && train.trainX <= screenWidth / tileSize &&
+                    train.trainY >= 0 && train.trainY <= screenHeight / tileSize)
+                {
+                        DrawRectangle(train.trainX * tileSize + 2, train.trainY * tileSize + 2, tileSize - 4, tileSize - 4, DARKGREEN);
+                }
+
+#pragma endregion
+
 #pragma region - type indicator -
 
-                switch (activeTile)//type indicator
+                switch (activeTile) // type indicator
                 {
                 case TileType::Empty:
                         DrawRectangle(typeIndicatorX, typeIndicatorY, typeIndicatorSize, typeIndicatorSize, WHITE);
