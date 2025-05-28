@@ -5,7 +5,7 @@ g++ Main.cpp -o train.exe -IC:/raylib/include -LC:/raylib/lib -lraylib -lopengl3
 #include "raylib.h"
 #include <vector>
 
-struct Train
+struct Train // train
 {
         std::vector<Vector2> path;
 
@@ -17,7 +17,9 @@ struct Train
                 right
         };
 
-        float moveSpeed = 1;
+        float moveSpeed = 0.8;
+
+        float move;
 
         int trainX, trainY;
 
@@ -25,7 +27,9 @@ struct Train
 
         int stationTargetID;
 
-        bool isMoving;
+        bool isMoving = false;
+
+        //the stats
 };
 
 Train train;
@@ -92,6 +96,10 @@ int main()
 
         train.trainX = 16;
         train.trainY = 16;
+
+        train.path.push_back(Vector2{15, 16});
+        train.path.push_back(Vector2{15, 15});
+        train.path.push_back(Vector2{14, 15});
 
         while (!WindowShouldClose())
         {
@@ -182,13 +190,32 @@ int main()
 
 #pragma endRegion
 
-#pragma region - train drawing -
+#pragma region - train -
 
                 if (train.trainX >= 0 && train.trainX <= screenWidth / tileSize &&
                     train.trainY >= 0 && train.trainY <= screenHeight / tileSize)
                 {
                         DrawRectangle(train.trainX * tileSize + 2, train.trainY * tileSize + 2, tileSize - 4, tileSize - 4, DARKGREEN);
                 }
+
+#pragma region - train movement -
+
+                train.move -= GetFrameTime();
+
+                if (train.move <= 0 && train.isMoving)
+                {
+                        Vector2 _nextMove = train.path[train.targetPathIndex];
+
+                        train.trainX = _nextMove.x;
+                        train.trainY = _nextMove.y;
+
+                        train.move = train.moveSpeed;
+
+                        if (train.targetPathIndex < train.path.size() - 1)
+                                train.targetPathIndex++;
+                }
+
+#pragma endregion // sub
 
 #pragma endregion
 
@@ -213,6 +240,13 @@ int main()
                 default:
                         break;
                 }
+
+#pragma endregion
+
+#pragma region - input -
+
+                if (IsKeyPressed(KEY_SPACE))
+                        train.isMoving = true;
 
 #pragma endregion
 
