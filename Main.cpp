@@ -29,7 +29,14 @@ struct Train // train
 
         bool isMoving = false;
 
-        //the stats
+        // the stats
+};
+
+struct TrackNode
+{
+        int x, y;
+        
+        std::vector<Vector2> adjacents;
 };
 
 Train train;
@@ -68,8 +75,13 @@ int main()
 
         std::vector<std::vector<int>> stationsGrid;
 
+        std::vector<TrackNode> trackNodes;
+
         int gridRows = screenWidth / tileSize;
         int gridCols = screenHeight / tileSize;
+
+        // painter
+        TileType activeTile = TileType::Track;
 
 #pragma endregion
 
@@ -91,9 +103,7 @@ int main()
         }
 #pragma endregion
 
-        // painter
-        TileType activeTile = TileType::Track;
-
+        // temps
         train.trainX = 16;
         train.trainY = 16;
 
@@ -188,7 +198,7 @@ int main()
                         activeTile = static_cast<TileType>(typeIndex);
                 }
 
-#pragma endRegion
+#pragma endregion
 
 #pragma region - train -
 
@@ -243,10 +253,30 @@ int main()
 
 #pragma endregion
 
-#pragma region - input -
+#pragma region - start grid scan -
 
-                if (IsKeyPressed(KEY_SPACE))
-                        train.isMoving = true;
+                // if (IsKeyPressed(KEY_SPACE))
+                //         train.isMoving = true;
+
+                if (IsKeyPressed(KEY_B))
+                {
+
+                        for (float x = 0; x < gridRows; x++)
+                        {
+                                for (float y = 0; y < gridCols; y++)
+                                {
+                                        if (grid[x][y] == TileType::Track)
+                                        {
+                                                TrackNode _trackNode;
+
+                                                _trackNode.x = x;
+                                                _trackNode.y = y;
+
+                                                trackNodes.push_back(_trackNode);
+                                        }
+                                }
+                        }
+                }
 
 #pragma endregion
 
