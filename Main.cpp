@@ -35,7 +35,7 @@ struct Train // train
 struct TrackNode
 {
         int x, y;
-        
+
         std::vector<Vector2> adjacents;
 };
 
@@ -271,6 +271,16 @@ int main()
 
                                                 _trackNode.x = x;
                                                 _trackNode.y = y;
+
+                                                //adjacents
+                                                if (y > 0 && grid[x][y - 1] == TileType::Track)// above
+                                                        _trackNode.adjacents.push_back(Vector2{x, y - 1});
+                                                if (y < gridCols - 1 && grid[x][y + 1] == TileType::Track)// below
+                                                        _trackNode.adjacents.push_back(Vector2{x, y + 1});
+                                                if (x > 0 && grid[x - 1][y] == TileType::Track)// left
+                                                        _trackNode.adjacents.push_back(Vector2{x - 1, y});
+                                                if (x < gridRows - 1 && grid[x + 1][y] == TileType::Track)// right
+                                                        _trackNode.adjacents.push_back(Vector2{x + 1, y});
 
                                                 trackNodes.push_back(_trackNode);
                                         }
