@@ -4,6 +4,10 @@ g++ Main.cpp -o train.exe -IC:/raylib/include -LC:/raylib/lib -lraylib -lopengl3
 
 #include "raylib.h"
 #include <vector>
+#include <queue>
+#include <map>
+#include <set>
+#include <algorithm>
 
 struct Train // train
 {
@@ -272,14 +276,14 @@ int main()
                                                 _trackNode.x = x;
                                                 _trackNode.y = y;
 
-                                                //adjacents
-                                                if (y > 0 && grid[x][y - 1] == TileType::Track)// above
+                                                // adjacents
+                                                if (y > 0 && grid[x][y - 1] == TileType::Track) // above
                                                         _trackNode.adjacents.push_back(Vector2{x, y - 1});
-                                                if (y < gridCols - 1 && grid[x][y + 1] == TileType::Track)// below
+                                                if (y < gridCols - 1 && grid[x][y + 1] == TileType::Track) // below
                                                         _trackNode.adjacents.push_back(Vector2{x, y + 1});
-                                                if (x > 0 && grid[x - 1][y] == TileType::Track)// left
+                                                if (x > 0 && grid[x - 1][y] == TileType::Track) // left
                                                         _trackNode.adjacents.push_back(Vector2{x - 1, y});
-                                                if (x < gridRows - 1 && grid[x + 1][y] == TileType::Track)// right
+                                                if (x < gridRows - 1 && grid[x + 1][y] == TileType::Track) // right
                                                         _trackNode.adjacents.push_back(Vector2{x + 1, y});
 
                                                 trackNodes.push_back(_trackNode);
@@ -296,3 +300,55 @@ int main()
         CloseWindow();
         return 0;
 }
+
+#pragma region - pathfinding -
+
+std::vector<Vector2> findPath(Vector2 _start, Vector2 _end, const std::vector<TrackNode> &_trackNodes)
+{
+        std::queue<Vector2> _toVisit;
+        std::map<Vector2, Vector2> _predecessors;
+        std::set<Vector2> _visited;
+
+        _toVisit.push(_start);
+        _visited.insert(_start);
+
+        while (!_toVisit.empty())
+        {
+                Vector2 _current = _toVisit.front();
+                _toVisit.pop();
+
+                if (_current.x == _end.x && _current.y == _end.y)
+                {
+                        // Reconstruct path
+                        std::vector<Vector2> _path;
+                        for (Vector2 _at = _end; !(_at.x == _start.x && _at.y == _start.y); _at = _predecessors[_at])
+                        {
+                                _path.push_back(_at);
+                        }
+                        _path.push_back(_start);
+                        std::reverse(_path.begin(), _path.end());
+                        return _path;
+                }
+
+                // Find the tracknode corresponding to _current
+                auto _it = std::find_if(_trackNodes.begin(), _trackNodes.end(), [&_current](const TrackNode &_node)
+                                        { return _node.x == _current.x && _node.y == _current.y; });
+
+                if (_it != _trackNodes.end())
+                {
+                        for (const Vector2 &_neighbor : _it->adjacents)
+                        {
+                                if (_visited.find(_neighbor) == _visited.end())
+                                {
+                                        _toVisit.push(_neighbor);
+                                        _visited.insert(_neighbor);
+                                        _predecessors[_neighbor] = _current;
+                                }
+                        }
+                }
+        }
+
+        return {}; // No path found
+}
+
+#pragma endregion
