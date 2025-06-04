@@ -9,6 +9,11 @@ g++ Main.cpp -o train.exe -IC:/raylib/include -LC:/raylib/lib -lraylib -lopengl3
 #include <set>
 #include <algorithm>
 
+bool operator<(const Vector2 &a, const Vector2 &b)
+{
+        return (a.y < b.y) || (a.y == b.y && a.x < b.x);
+}
+
 struct Train // train
 {
         std::vector<Vector2> path;
@@ -24,6 +29,8 @@ struct Train // train
         float moveSpeed = 0.8;
 
         float move;
+
+        float stationWaitTime = 0.0f;
 
         int trainX, trainY;
 
@@ -112,8 +119,12 @@ int main()
         train.trainY = 16;
 
         train.path.push_back(Vector2{15, 16});
-        train.path.push_back(Vector2{15, 15});
-        train.path.push_back(Vector2{14, 15});
+        train.path.push_back(Vector2{14, 16});
+        train.path.push_back(Vector2{13, 16});
+        train.path.push_back(Vector2{12, 16});
+        train.path.push_back(Vector2{11, 16});
+        train.path.push_back(Vector2{10, 16});
+        train.path.push_back(Vector2{9, 16});
 
         while (!WindowShouldClose())
         {
@@ -214,6 +225,12 @@ int main()
 
 #pragma region - train movement -
 
+                if (train.stationWaitTime > 0.0f)
+                {
+                        train.stationWaitTime -= GetFrameTime();
+                        continue;
+                }
+
                 train.move -= GetFrameTime();
 
                 if (train.move <= 0 && train.isMoving)
@@ -223,10 +240,15 @@ int main()
                         train.trainX = _nextMove.x;
                         train.trainY = _nextMove.y;
 
-                        train.move = train.moveSpeed;
-
                         if (train.targetPathIndex < train.path.size() - 1)
                                 train.targetPathIndex++;
+
+                        if (grid[train.trainX][train.trainY] == TileType::Station)
+                        {
+                                train.stationWaitTime = 3.0f; // pause at station
+                        }
+
+                        train.move = train.moveSpeed;
                 }
 
 #pragma endregion // sub
@@ -264,7 +286,6 @@ int main()
 
                 if (IsKeyPressed(KEY_B))
                 {
-
                         for (float x = 0; x < gridRows; x++)
                         {
                                 for (float y = 0; y < gridCols; y++)
@@ -290,6 +311,7 @@ int main()
                                         }
                                 }
                         }
+                        train.isMoving = true;
                 }
 
 #pragma endregion
