@@ -82,14 +82,14 @@ int main()
 
         const int maxTileTypes = static_cast<int>(TileType::COUNT);
 
-        std::vector<std::vector<TileType>> grid;
+        std::vector<std::vector<TileType>> tileGrid;
 
         std::vector<std::vector<int>> stationsGrid;
 
         std::vector<TrackNode> trackNodes;
 
-        int gridRows = screenWidth / tileSize;
-        int gridCols = screenHeight / tileSize;
+        int gridCols = screenWidth / tileSize;
+        int gridRows = screenHeight / tileSize;
 
         // painter
         TileType activeTile = TileType::Track;
@@ -98,11 +98,11 @@ int main()
 
 #pragma region - grid initializer -
         // regular grid
-        grid.resize(gridRows);
+        tileGrid.resize(gridRows);
 
         for (int i = 0; i < gridRows; i++)
         {
-                grid[i].resize(gridCols, TileType::Empty);
+                tileGrid[i].resize(gridCols, TileType::Empty);
         }
 
         // grid to keep track of station numbers
@@ -118,6 +118,8 @@ int main()
         train.trainX = 16;
         train.trainY = 16;
 
+        tileGrid[16][12] = TileType::Station;
+        stationsGrid[16][12] = nextStationId++;
         train.path.push_back(Vector2{15, 16});
         train.path.push_back(Vector2{14, 16});
         train.path.push_back(Vector2{13, 16});
@@ -133,22 +135,22 @@ int main()
                 ClearBackground(RAYWHITE);
 
 #pragma region - draw grid -
-                for (int x = 0; x < gridRows; x++)
+                for (int row = 0; row < gridRows; row++)
                 {
-                        for (int y = 0; y < gridCols; y++)
+                        for (int col = 0; col < gridCols; col++)
                         {
-                                int cellx = x * tileSize;
-                                int celly = y * tileSize;
+                                int cellx = col * tileSize;
+                                int celly = row * tileSize;
 
-                                switch (grid[y][x])
+                                switch (tileGrid[row][col])
                                 {
                                 case TileType::Track:
                                         DrawRectangle(cellx, celly, tileSize, tileSize, GRAY);
                                         break;
                                 case TileType::Station:
                                         DrawRectangle(cellx, celly, tileSize, tileSize, GREEN);
-                                        if (stationsGrid[y][x] >= 0) // shows station number
-                                                DrawText(TextFormat("%d", stationsGrid[y][x]), cellx, celly, 32, BLACK);
+                                        if (stationsGrid[row][col] >= 0) // shows station number
+                                                DrawText(TextFormat("%d", stationsGrid[row][col]), cellx, celly, 32, BLACK);
                                         break;
                                 case TileType::Obstacle:
                                         DrawRectangle(cellx, celly, tileSize, tileSize, DARKGRAY);
@@ -182,22 +184,22 @@ int main()
 
                 if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
                 {
-                        if (gridY >= 0 && gridY < grid.size() &&
-                            gridX >= 0 && gridX < grid[0].size())
+                        if (gridY >= 0 && gridY < tileGrid.size() &&
+                            gridX >= 0 && gridX < tileGrid[0].size())
 
-                                if (activeTile == TileType::Station && grid[gridY][gridX] != TileType::Station) // give station an ID
+                                if (activeTile == TileType::Station && tileGrid[gridY][gridX] != TileType::Station) // give station an ID
                                 {
                                         stationsGrid[gridY][gridX] = nextStationId;
                                         nextStationId++;
                                 }
-                        grid[gridY][gridX] = activeTile;
+                        tileGrid[gridY][gridX] = activeTile;
                 }
 
                 if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
                 {
-                        if (gridY >= 0 && gridY < grid.size() &&
-                            gridX >= 0 && gridX < grid[0].size())
-                                grid[gridY][gridX] = TileType::Empty;
+                        if (gridY >= 0 && gridY < tileGrid.size() &&
+                            gridX >= 0 && gridX < tileGrid[0].size())
+                                tileGrid[gridY][gridX] = TileType::Empty;
                 }
 
                 if (GetMouseWheelMove != 0) // reads mousewheel input to set the tile type to paint
@@ -236,19 +238,18 @@ int main()
                 if (train.move <= 0 && train.isMoving)
                 {
                         Vector2 _nextMove = train.path[train.targetPathIndex];
-
                         train.trainX = _nextMove.x;
                         train.trainY = _nextMove.y;
 
-                        if (train.targetPathIndex < train.path.size() - 1)
-                                train.targetPathIndex++;
-
-                        if (grid[train.trainX][train.trainY] == TileType::Station)
+                        if (tileGrid[train.trainY][train.trainX] == TileType::Station)
                         {
                                 train.stationWaitTime = 3.0f; // pause at station
                         }
 
                         train.move = train.moveSpeed;
+
+                        if (train.targetPathIndex < train.path.size() - 1)
+                                train.targetPathIndex++;
                 }
 
 #pragma endregion // sub
@@ -286,26 +287,29 @@ int main()
 
                 if (IsKeyPressed(KEY_B))
                 {
-                        for (float x = 0; x < gridRows; x++)
+                        for (float row = 0; row < gridRows; row++)
                         {
-                                for (float y = 0; y < gridCols; y++)
+                                for (float col = 0; col < gridCols; col++)
                                 {
-                                        if (grid[x][y] == TileType::Track)
+                                        if (tileGrid[row][col] == TileType::Track)
                                         {
                                                 TrackNode _trackNode;
 
-                                                _trackNode.x = x;
-                                                _trackNode.y = y;
+                                                _trackNode.x = col;
+                                                _trackNode.y = row;
 
                                                 // adjacents
-                                                if (y > 0 && grid[x][y - 1] == TileType::Track) // above
-                                                        _trackNode.adjacents.push_back(Vector2{x, y - 1});
-                                                if (y < gridCols - 1 && grid[x][y + 1] == TileType::Track) // below
-                                                        _trackNode.adjacents.push_back(Vector2{x, y + 1});
-                                                if (x > 0 && grid[x - 1][y] == TileType::Track) // left
-                                                        _trackNode.adjacents.push_back(Vector2{x - 1, y});
-                                                if (x < gridRows - 1 && grid[x + 1][y] == TileType::Track) // right
-                                                        _trackNode.adjacents.push_back(Vector2{x + 1, y});
+                                                if (row > 0 && tileGrid[row - 1][col] == TileType::Track) // above
+                                                        _trackNode.adjacents.push_back(Vector2{col, row - 1});
+
+                                                if (row < gridRows - 1 && tileGrid[row + 1][col] == TileType::Track) // below
+                                                        _trackNode.adjacents.push_back(Vector2{col, row + 1});
+
+                                                if (col > 0 && tileGrid[row][col - 1] == TileType::Track) // left
+                                                        _trackNode.adjacents.push_back(Vector2{col - 1, row});
+
+                                                if (col < gridCols - 1 && tileGrid[row][col + 1] == TileType::Track) // right
+                                                        _trackNode.adjacents.push_back(Vector2{col + 1, row});
 
                                                 trackNodes.push_back(_trackNode);
                                         }
