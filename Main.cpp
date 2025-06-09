@@ -227,15 +227,13 @@ int main()
 
 #pragma region - train movement -
 
+                train.move -= GetFrameTime();
+
                 if (train.stationWaitTime > 0.0f)
                 {
                         train.stationWaitTime -= GetFrameTime();
-                        continue;
                 }
-
-                train.move -= GetFrameTime();
-
-                if (train.move <= 0 && train.isMoving)
+                else if (train.move <= 0 && train.isMoving)
                 {
                         Vector2 _nextMove = train.path[train.targetPathIndex];
                         train.trainX = _nextMove.x;
