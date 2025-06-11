@@ -118,15 +118,15 @@ int main()
         train.trainX = 16;
         train.trainY = 16;
 
-        tileGrid[16][12] = TileType::Station;
-        stationsGrid[16][12] = nextStationId++;
-        train.path.push_back(Vector2{15, 16});
-        train.path.push_back(Vector2{14, 16});
-        train.path.push_back(Vector2{13, 16});
-        train.path.push_back(Vector2{12, 16});
-        train.path.push_back(Vector2{11, 16});
-        train.path.push_back(Vector2{10, 16});
-        train.path.push_back(Vector2{9, 16});
+        // tileGrid[16][12] = TileType::Station;
+        // stationsGrid[16][12] = nextStationId++;
+        // train.path.push_back(Vector2{15, 16});
+        // train.path.push_back(Vector2{14, 16});
+        // train.path.push_back(Vector2{13, 16});
+        // train.path.push_back(Vector2{12, 16});
+        // train.path.push_back(Vector2{11, 16});
+        // train.path.push_back(Vector2{10, 16});
+        // train.path.push_back(Vector2{9, 16});
 
         while (!WindowShouldClose())
         {
@@ -318,6 +318,11 @@ int main()
 
 #pragma endregion
 
+#pragma region - get path -
+
+Vector2 _currentPos = {train.trainX, train.trainY};
+
+#pragma endregion
                 EndDrawing();
         }
 
