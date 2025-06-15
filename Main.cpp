@@ -63,6 +63,8 @@ int typeIndicatorY = 16;
 
 int nextStationId = 1;
 
+std::vector<Vector2> findPath(Vector2 _start, Vector2 _end, const std::vector<TrackNode> &_trackNodes);
+
 int main()
 {
         InitWindow(screenWidth, screenHeight, "Train Track Trouble");
@@ -114,19 +116,11 @@ int main()
         }
 #pragma endregion
 
-        // temps
+        // start
         train.trainX = 16;
         train.trainY = 16;
 
-        // tileGrid[16][12] = TileType::Station;
-        // stationsGrid[16][12] = nextStationId++;
-        // train.path.push_back(Vector2{15, 16});
-        // train.path.push_back(Vector2{14, 16});
-        // train.path.push_back(Vector2{13, 16});
-        // train.path.push_back(Vector2{12, 16});
-        // train.path.push_back(Vector2{11, 16});
-        // train.path.push_back(Vector2{10, 16});
-        // train.path.push_back(Vector2{9, 16});
+        tileGrid[train.trainY][train.trainX] = TileType::Track;
 
         while (!WindowShouldClose())
         {
@@ -235,19 +229,26 @@ int main()
                 }
                 else if (train.move <= 0 && train.isMoving)
                 {
-                        Vector2 _nextMove = train.path[train.targetPathIndex];
-                        train.trainX = _nextMove.x;
-                        train.trainY = _nextMove.y;
-
-                        if (tileGrid[train.trainY][train.trainX] == TileType::Station)
+                        if (train.targetPathIndex >= train.path.size())
                         {
-                                train.stationWaitTime = 3.0f; // pause at station
+                                train.isMoving = false;
                         }
+                        else
+                        {
+                                Vector2 _nextMove = train.path[train.targetPathIndex];
+                                train.trainX = _nextMove.x;
+                                train.trainY = _nextMove.y;
 
-                        train.move = train.moveSpeed;
+                                if (tileGrid[train.trainY][train.trainX] == TileType::Station)
+                                {
+                                        train.stationWaitTime = 3.0f; // pause at station
+                                }
 
-                        if (train.targetPathIndex < train.path.size() - 1)
-                                train.targetPathIndex++;
+                                train.move = train.moveSpeed;
+
+                                if (train.targetPathIndex < train.path.size() - 1)
+                                        train.targetPathIndex++;
+                        }
                 }
 
 #pragma endregion // sub
@@ -278,13 +279,15 @@ int main()
 
 #pragma endregion
 
-#pragma region - start grid scan -
+#pragma region - start scanning and planning -
 
-                // if (IsKeyPressed(KEY_SPACE))
-                //         train.isMoving = true;
-
-                if (IsKeyPressed(KEY_B))
+                if (IsKeyPressed(KEY_P))
                 {
+                        // grid scan
+
+                        trackNodes.clear();
+                        train.path.clear();
+
                         for (float row = 0; row < gridRows; row++)
                         {
                                 for (float col = 0; col < gridCols; col++)
@@ -313,14 +316,39 @@ int main()
                                         }
                                 }
                         }
-                        train.isMoving = true;
+
+                        // make path
+                        Vector2 _currentPos = Vector2{(float)train.trainX, (float)train.trainY};
+
+                        // Find a station tile
+                        Vector2 _target = {-1, -1};
+                        for (int _row = 0; _row < gridRows; _row++)
+                        {
+                                for (int _col = 0; _col < gridCols; _col++)
+                                {
+                                        if (stationsGrid[_row][_col] >= 1)
+                                        {
+                                                _target = Vector2{(float)_col, (float)_row};
+                                                break;
+                                        }
+                                }
+                                if (_target.x >= 0)
+                                        break;
+                        }
+
+                        // Only if station found
+                        if (_target.x >= 0)
+                        {
+                                std::vector<Vector2> _path = findPath(_currentPos, _target, trackNodes);
+                                if (!_path.empty())
+                                {
+                                        train.path = _path;
+                                        train.targetPathIndex = 0;
+                                        train.isMoving = true;
+                                        train.move = train.moveSpeed;
+                                }
+                        }
                 }
-
-#pragma endregion
-
-#pragma region - get path -
-
-Vector2 _currentPos = {train.trainX, train.trainY};
 
 #pragma endregion
                 EndDrawing();
