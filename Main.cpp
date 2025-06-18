@@ -9,14 +9,24 @@ g++ Main.cpp -o train.exe -IC:/raylib/include -LC:/raylib/lib -lraylib -lopengl3
 #include <set>
 #include <algorithm>
 
-bool operator<(const Vector2 &a, const Vector2 &b)
+struct IntVec2
 {
-        return (a.y < b.y) || (a.y == b.y && a.x < b.x);
-}
+        int x, y;
+
+        bool operator<(const IntVec2 &other) const
+        {
+                return (y < other.y) || (y == other.y && x < other.x);
+        }
+
+        bool operator==(const IntVec2 &other) const
+        {
+                return x == other.x && y == other.y;
+        }
+};
 
 struct Train // train
 {
-        std::vector<Vector2> path;
+        std::vector<IntVec2> path;
 
         enum direction
         {
@@ -47,7 +57,7 @@ struct TrackNode
 {
         int x, y;
 
-        std::vector<Vector2> adjacents;
+        std::vector<IntVec2> adjacents;
 };
 
 Train train;
@@ -63,7 +73,9 @@ int typeIndicatorY = 16;
 
 int nextStationId = 1;
 
-std::vector<Vector2> findPath(Vector2 _start, Vector2 _end, const std::vector<TrackNode> &_trackNodes);
+bool isTrainPlaced = false;
+
+std::vector<IntVec2> findPath(IntVec2 _start, IntVec2 _end, const std::vector<TrackNode> &_trackNodes);
 
 int main()
 {
@@ -117,10 +129,10 @@ int main()
 #pragma endregion
 
         // start
-        train.trainX = 16;
-        train.trainY = 16;
+        // train.trainX = 16;
+        // train.trainY = 16;
 
-        tileGrid[train.trainY][train.trainX] = TileType::Track;
+        // tileGrid[train.trainY][train.trainX] = TileType::Track;
 
         while (!WindowShouldClose())
         {
@@ -186,7 +198,15 @@ int main()
                                         stationsGrid[gridY][gridX] = nextStationId;
                                         nextStationId++;
                                 }
+
                         tileGrid[gridY][gridX] = activeTile;
+
+                        if (!isTrainPlaced && activeTile == TileType::Track)
+                        {
+                                train.trainX = gridX;
+                                train.trainY = gridY;
+                                isTrainPlaced = true;
+                        }
                 }
 
                 if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
@@ -235,7 +255,7 @@ int main()
                         }
                         else
                         {
-                                Vector2 _nextMove = train.path[train.targetPathIndex];
+                                IntVec2 _nextMove = train.path[train.targetPathIndex];
                                 train.trainX = _nextMove.x;
                                 train.trainY = _nextMove.y;
 
@@ -288,9 +308,11 @@ int main()
                         trackNodes.clear();
                         train.path.clear();
 
-                        for (float row = 0; row < gridRows; row++)
+                        DrawRectangle(50, 50, 50, 50, RED);
+
+                        for (int row = 0; row < gridRows; row++)
                         {
-                                for (float col = 0; col < gridCols; col++)
+                                for (int col = 0; col < gridCols; col++)
                                 {
                                         if (tileGrid[row][col] == TileType::Track)
                                         {
@@ -301,34 +323,45 @@ int main()
 
                                                 // adjacents
                                                 if (row > 0 && tileGrid[row - 1][col] == TileType::Track) // above
-                                                        _trackNode.adjacents.push_back(Vector2{col, row - 1});
+                                                        _trackNode.adjacents.push_back(IntVec2{col, row - 1});
 
                                                 if (row < gridRows - 1 && tileGrid[row + 1][col] == TileType::Track) // below
-                                                        _trackNode.adjacents.push_back(Vector2{col, row + 1});
+                                                        _trackNode.adjacents.push_back(IntVec2{col, row + 1});
 
                                                 if (col > 0 && tileGrid[row][col - 1] == TileType::Track) // left
-                                                        _trackNode.adjacents.push_back(Vector2{col - 1, row});
+                                                        _trackNode.adjacents.push_back(IntVec2{col - 1, row});
 
                                                 if (col < gridCols - 1 && tileGrid[row][col + 1] == TileType::Track) // right
-                                                        _trackNode.adjacents.push_back(Vector2{col + 1, row});
+                                                        _trackNode.adjacents.push_back(IntVec2{col + 1, row});
 
                                                 trackNodes.push_back(_trackNode);
+
+                                                DrawRectangle(110, 50, 50, 50, RED);
                                         }
                                 }
                         }
 
                         // make path
-                        Vector2 _currentPos = Vector2{(float)train.trainX, (float)train.trainY};
+                        IntVec2 _currentPos = {train.trainX, train.trainY};
+
+                        bool isValidStart = std::any_of(trackNodes.begin(), trackNodes.end(), [&_currentPos](const TrackNode &_n)
+                                                        { return _n.x == _currentPos.x && _n.y == _currentPos.y; });
+
+                        if (!isValidStart)
+                        {
+                                TraceLog(LOG_WARNING, "Train is not on a walid node !!!!");
+                                continue;
+                        }
 
                         // Find a station tile
-                        Vector2 _target = {-1, -1};
+                        IntVec2 _target = {-1, -1};
                         for (int _row = 0; _row < gridRows; _row++)
                         {
                                 for (int _col = 0; _col < gridCols; _col++)
                                 {
                                         if (stationsGrid[_row][_col] >= 1)
                                         {
-                                                _target = Vector2{(float)_col, (float)_row};
+                                                _target = IntVec2{_col, _row};
                                                 break;
                                         }
                                 }
@@ -339,9 +372,17 @@ int main()
                         // Only if station found
                         if (_target.x >= 0)
                         {
-                                std::vector<Vector2> _path = findPath(_currentPos, _target, trackNodes);
+                                TraceLog(LOG_INFO, "Calling findPath from (%d, %d) to (%d, %d)", train.trainX, train.trainY, (int)_target.x, (int)_target.y);
+
+                                std::vector<IntVec2> _path = findPath(_currentPos, _target, trackNodes);
                                 if (!_path.empty())
                                 {
+                                        for (auto step : _path)
+                                        {
+                                                TraceLog(LOG_INFO, "Path step: (%d, %d)", step.x, step.y);
+                                                TraceLog(LOG_INFO, "Start: (%d, %d), End: (%d, %d)", _currentPos.x, _currentPos.y, _target.x, _target.y);
+                                        }
+                                        DrawRectangle(170, 50, 50, 50, RED);
                                         train.path = _path;
                                         train.targetPathIndex = 0;
                                         train.isMoving = true;
@@ -360,25 +401,27 @@ int main()
 
 #pragma region - pathfinding -
 
-std::vector<Vector2> findPath(Vector2 _start, Vector2 _end, const std::vector<TrackNode> &_trackNodes)
+std::vector<IntVec2> findPath(IntVec2 _start, IntVec2 _end, const std::vector<TrackNode> &_trackNodes)
 {
-        std::queue<Vector2> _toVisit;
-        std::map<Vector2, Vector2> _predecessors;
-        std::set<Vector2> _visited;
+        TraceLog(LOG_INFO, "findPath(): _trackNodes.size() = %d", _trackNodes.size());
+
+        std::queue<IntVec2> _toVisit;
+        std::map<IntVec2, IntVec2> _predecessors;
+        std::set<IntVec2> _visited;
 
         _toVisit.push(_start);
         _visited.insert(_start);
 
         while (!_toVisit.empty())
         {
-                Vector2 _current = _toVisit.front();
+                IntVec2 _current = _toVisit.front();
                 _toVisit.pop();
 
                 if (_current.x == _end.x && _current.y == _end.y)
                 {
                         // Reconstruct path
-                        std::vector<Vector2> _path;
-                        for (Vector2 _at = _end; !(_at.x == _start.x && _at.y == _start.y); _at = _predecessors[_at])
+                        std::vector<IntVec2> _path;
+                        for (IntVec2 _at = _end; !(_at.x == _start.x && _at.y == _start.y); _at = _predecessors[_at])
                         {
                                 _path.push_back(_at);
                         }
@@ -393,7 +436,7 @@ std::vector<Vector2> findPath(Vector2 _start, Vector2 _end, const std::vector<Tr
 
                 if (_it != _trackNodes.end())
                 {
-                        for (const Vector2 &_neighbor : _it->adjacents)
+                        for (const IntVec2 &_neighbor : _it->adjacents)
                         {
                                 if (_visited.find(_neighbor) == _visited.end())
                                 {
