@@ -247,27 +247,31 @@ int main()
                 {
                         train.stationWaitTime -= GetFrameTime();
                 }
-                else if (train.move <= 0 && train.isMoving)
+                else if (train.move <= 0)
                 {
-                        if (train.targetPathIndex >= train.path.size())
+                        if (train.isMoving && !train.path.empty())
                         {
-                                train.isMoving = false;
-                        }
-                        else
-                        {
-                                IntVec2 _nextMove = train.path[train.targetPathIndex];
-                                train.trainX = _nextMove.x;
-                                train.trainY = _nextMove.y;
 
-                                if (tileGrid[train.trainY][train.trainX] == TileType::Station)
+                                if (train.targetPathIndex >= train.path.size())
                                 {
-                                        train.stationWaitTime = 3.0f; // pause at station
+                                        train.isMoving = false;
                                 }
+                                else
+                                {
+                                        IntVec2 _nextMove = train.path[train.targetPathIndex];
+                                        train.trainX = _nextMove.x;
+                                        train.trainY = _nextMove.y;
 
-                                train.move = train.moveSpeed;
+                                        if (tileGrid[train.trainY][train.trainX] == TileType::Station)
+                                        {
+                                                train.stationWaitTime = 3.0f; // pause at station
+                                        }
 
-                                if (train.targetPathIndex < train.path.size() - 1)
-                                        train.targetPathIndex++;
+                                        train.move = train.moveSpeed;
+
+                                        if (train.targetPathIndex < train.path.size() - 1)
+                                                train.targetPathIndex++;
+                                }
                         }
                 }
 
@@ -314,7 +318,7 @@ int main()
                         {
                                 for (int col = 0; col < gridCols; col++)
                                 {
-                                        if (tileGrid[row][col] == TileType::Track)
+                                        if (tileGrid[row][col] == TileType::Track || tileGrid[row][col] == TileType::Station)
                                         {
                                                 TrackNode _trackNode;
 
@@ -322,17 +326,18 @@ int main()
                                                 _trackNode.y = row;
 
                                                 // adjacents
-                                                if (row > 0 && tileGrid[row - 1][col] == TileType::Track) // above
-                                                        _trackNode.adjacents.push_back(IntVec2{col, row - 1});
+                                                if (row > 0 && (tileGrid[row - 1][col] == TileType::Track || tileGrid[row - 1][col] == TileType::Station))  // up
+    _trackNode.adjacents.push_back(IntVec2{col, row - 1});
 
-                                                if (row < gridRows - 1 && tileGrid[row + 1][col] == TileType::Track) // below
-                                                        _trackNode.adjacents.push_back(IntVec2{col, row + 1});
+if (row < gridRows - 1 && (tileGrid[row + 1][col] == TileType::Track || tileGrid[row + 1][col] == TileType::Station))  // down
+    _trackNode.adjacents.push_back(IntVec2{col, row + 1});
 
-                                                if (col > 0 && tileGrid[row][col - 1] == TileType::Track) // left
-                                                        _trackNode.adjacents.push_back(IntVec2{col - 1, row});
+if (col > 0 && (tileGrid[row][col - 1] == TileType::Track || tileGrid[row][col - 1] == TileType::Station))  // left
+    _trackNode.adjacents.push_back(IntVec2{col - 1, row});
 
-                                                if (col < gridCols - 1 && tileGrid[row][col + 1] == TileType::Track) // right
-                                                        _trackNode.adjacents.push_back(IntVec2{col + 1, row});
+if (col < gridCols - 1 && (tileGrid[row][col + 1] == TileType::Track || tileGrid[row][col + 1] == TileType::Station))  // right
+    _trackNode.adjacents.push_back(IntVec2{col + 1, row});
+
 
                                                 trackNodes.push_back(_trackNode);
 
@@ -375,6 +380,9 @@ int main()
                                 TraceLog(LOG_INFO, "Calling findPath from (%d, %d) to (%d, %d)", train.trainX, train.trainY, (int)_target.x, (int)_target.y);
 
                                 std::vector<IntVec2> _path = findPath(_currentPos, _target, trackNodes);
+                                TraceLog(LOG_INFO, "Train path size: %d", train.path.size());
+                                TraceLog(LOG_INFO, "Initial targetPathIndex: %d", train.targetPathIndex);
+
                                 if (!_path.empty())
                                 {
                                         for (auto step : _path)
@@ -382,9 +390,9 @@ int main()
                                                 TraceLog(LOG_INFO, "Path step: (%d, %d)", step.x, step.y);
                                                 TraceLog(LOG_INFO, "Start: (%d, %d), End: (%d, %d)", _currentPos.x, _currentPos.y, _target.x, _target.y);
                                         }
-                                        DrawRectangle(170, 50, 50, 50, RED);
+                                        DrawRectangle(170, 50, 50, 50, BLUE);
                                         train.path = _path;
-                                        train.targetPathIndex = 0;
+                                        train.targetPathIndex = (_path.size() > 1 ? 1 : 0);
                                         train.isMoving = true;
                                         train.move = train.moveSpeed;
                                 }
